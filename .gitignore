@@ -1,0 +1,12 @@
+.env
+.env.local
+.env.production
+*.log
+__pycache__/
+*.pyc
+node_modules/
+data/
+logs/
+.DS_Store
+*.key
+*.pem

@@ -1,0 +1,49 @@
+# Tensora Miner Node Configuration
+
+# Network
+rpc_url: https://rpc.tensora.sh
+chain_id: 44444444
+
+# Contract addresses (BSC mainnet)
+subnet_jobs_address: "0x..."  # Deploy SubnetJobs first
+subnet_registry_address: "0x3419dfa79a415a4599b2142d30d73c49692829c6"
+validator_rewards_address: "0x404F245E672AE2832851fB0f1F3A3d8a07BaF34D"
+tora_token_address: "0x4444d14d522386647c29FD9cD9723F7339ac0F3c"
+
+# Miner wallet (use env var in production!)
+wallet_key: "${MINER_PRIVATE_KEY}"
+
+# Hardware specification
+hardware_spec:
+  cpu: 8
+  ramGB: 16
+  vramGB: 8
+  gpu: true
+
+# AI Engine settings
+engine: "onnx"  # onnx | vllm | both
+
+# ONNX settings
+onnx:
+  timeout: 300
+  max_batch_size: 32
+
+# vLLM settings
+vllm:
+  gpu_memory_utilization: 0.9
+  max_model_len: 2048
+  default_model: "gpt2"  # Fallback model
+
+# IPFS
+ipfs_gateway: "https://ipfs.io/ipfs/"
+ipfs_api: "http://localhost:5001/api/v0"
+
+# Job processing
+max_concurrent_jobs: 4
+poll_interval: 10  # seconds
+retry_attempts: 3
+
+# Logging
+log_level: INFO
+log_file: "/var/log/tensora/miner.log"
+

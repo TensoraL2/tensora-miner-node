@@ -1,0 +1,120 @@
+version: '3.8'
+
+networks:
+  miner-net:
+    driver: bridge
+
+services:
+  # Miner Node - Executes AI inference jobs
+  miner:
+    build:
+      context: ./services/miner-node
+      dockerfile: Dockerfile
+    container_name: tensora-miner
+    restart: unless-stopped
+    networks:
+      - miner-net
+    environment:
+      - MINER_PRIVATE_KEY=${MINER_PRIVATE_KEY}
+      - RPC_URL=${RPC_URL:-https://rpc.tensora.sh}
+      - SUBNET_JOBS_ADDRESS=${SUBNET_JOBS_ADDRESS}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./data/miner:/data
+      - ./logs:/var/log/tensora
+    depends_on:
+      - ipfs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Validator Node - Verifies miner results
+  validator:
+    build:
+      context: ./services/validator-node
+      dockerfile: Dockerfile
+    container_name: tensora-validator
+    restart: unless-stopped
+    networks:
+      - miner-net
+    environment:
+      - VALIDATOR_PRIVATE_KEY=${VALIDATOR_PRIVATE_KEY}
+      - RPC_URL=${RPC_URL:-https://rpc.tensora.sh}
+      - SUBNET_JOBS_ADDRESS=${SUBNET_JOBS_ADDRESS}
+      - VALIDATOR_REWARDS_ADDRESS=0x404F245E672AE2832851fB0f1F3A3d8a07BaF34D
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./data/validator:/data
+      - ./logs:/var/log/tensora
+    depends_on:
+      - ipfs
+
+  # Coordinator - Job matchmaking and monitoring
+  coordinator:
+    build:
+      context: ./services/coordinator
+      dockerfile: Dockerfile
+    container_name: tensora-coordinator
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    networks:
+      - miner-net
+    environment:
+      - RPC_URL=${RPC_URL:-https://rpc.tensora.sh}
+      - SUBNET_JOBS_ADDRESS=${SUBNET_JOBS_ADDRESS}
+      - SUBNET_REGISTRY_ADDRESS=0x3419dfa79a415a4599b2142d30d73c49692829c6
+      - POSTGRES_URL=${POSTGRES_URL:-postgresql://tensora:tensora@postgres:5432/tensora}
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL - Job tracking and miner registry
+  postgres:
+    image: postgres:15-alpine
+    container_name: tensora-postgres
+    restart: unless-stopped
+    networks:
+      - miner-net
+    environment:
+      - POSTGRES_USER=tensora
+      - POSTGRES_PASSWORD=tensora
+      - POSTGRES_DB=tensora
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tensora"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # IPFS Node - Model and data storage
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: tensora-ipfs
+    restart: unless-stopped
+    ports:
+      - "5001:5001"  # API
+      - "8080:8080"  # Gateway
+    networks:
+      - miner-net
+    volumes:
+      - ipfs-data:/data/ipfs
+    environment:
+      - IPFS_PROFILE=server
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres-data:
+  ipfs-data:
+
