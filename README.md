@@ -192,12 +192,4 @@ def run_vllm(model_name, prompts):
 
 ---
 
-## 📦 **Next Steps:**
-
-1. ✅ Phase 1: Smart contracts created
-2. 🔄 Phase 2: Build miner/validator services (NOW)
-3. ⏳ Phase 3: Update SDK and CLI
-4. ⏳ Phase 4: Deploy and test
-
-Ready to build Phase 2?
 
